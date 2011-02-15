@@ -3,7 +3,7 @@
 // configuration
 define('PAGE_TITLE', 'Nanochan BBS');
 
-$adminPasses = array('ohlawdy');
+$adminPasses = array('');
 $modPasses = array();
 
 define('TIME_BETWEEN_TOPICS', 120);
@@ -23,15 +23,6 @@ else {
 	setcookie('sid', $sid, time() + 315360000, dirname(SELF)); // 315360000 = 3600 * 24 * 365 * 10 = 10 years
 }
 	
-// check cookie
-function check_cookie_admin($key) {
-	return $_COOKIE['admin'] == $key;
-}
-
-function check_cookie_mod($key) {
-	return $_COOKIE['mod'] == $key;
-}
-
 // stripslashes
 if(get_magic_quotes_gpc())
 	$_POST = array_map('stripslashes', $_POST);
@@ -108,6 +99,11 @@ $db = load();
 
 // pick action
 $action = (isset($_GET['action'])) ? $_GET['action'] : 'list';
+
+// do some basic writing permissions checking first
+if(!is_writable(__FILE__)) {
+	error('The NanoBBS file is not writable - please chmod it to 0777.');
+}
 
 switch($action) {
 	
@@ -634,13 +630,13 @@ function add_cite(id) {
 // 'db' functions
 function save($data) {
 	$contents = file_get_contents(__FILE__);
-	list($code, $db) = explode(base64_decode('Ly8gREIgSEVSRQ=='), $contents);
+	list($code, $db) = explode('//' . ' DB HERE', $contents);
 	
-	$new_contents = 	$code . base64_decode('Ly8gREIgSEVSRQ==') . "\n" .
-						'function load() {' . "\n" .
-						'	return ' . var_export($data, TRUE) . ';' . "\n" .
-						'}' . "\n" . 
-						'?>';
+	$new_contents = 	$code . '//' . ' DB HERE' . "\n" .
+					'function load() {' . "\n" .
+					'	return ' . var_export($data, TRUE) . ';' . "\n" .
+					'}' . "\n" . 
+					'?>';
 
 	file_put_contents(__FILE__, $new_contents);
 }
