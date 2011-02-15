@@ -31,6 +31,7 @@ if(get_magic_quotes_gpc())
 function redirect($where) {
 	header('HTTP/1.0 302 Moved Temporarily');
 	header('Location: ' . $where);
+	exit();
 }
 
 function error($message) {
@@ -45,10 +46,11 @@ function error($message) {
 }
 
 function check_topic_flood($ip, $topics) {
-	$start_time = time();
+	$startTime = time();
 	ksort($topics, SORT_NUMERIC);
 	foreach(array_reverse($topics) as $topic) {
-		if($topic[0]['time'] + TIME_BETWEEN_TOPICS < time())
+		if($topic[0]['time'] + TIME_BETWEEN_TOPICS < 
+$startTime)
 			return 0;
 		if($topic[0]['ip'] == $ip)
 			return $topic[0]['time'];
@@ -57,12 +59,13 @@ function check_topic_flood($ip, $topics) {
 }
 
 function check_post_flood($ip, $topics) {
-	$start_time = time();
+	$startTime = time();
 	
 	foreach(array_reverse($topics) as $topic) {
 		ksort($topic, SORT_NUMERIC);
 		foreach(array_reverse($topic) as $id => $post) {
-			if($post['time'] + TIME_BETWEEN_POSTS < time()) {
+			if($post['time'] + TIME_BETWEEN_POSTS < 
+$startTime) {
 				if($id == 0)
 					return 0;
 				break;
@@ -74,7 +77,7 @@ function check_post_flood($ip, $topics) {
 	return 0;
 }
 
-function check_topic_number($topic) {
+function check_poster_number($topic) {
 	ksort($topic, SORT_NUMERIC);
 	
 	$sids = array();
@@ -101,9 +104,8 @@ $db = load();
 $action = (isset($_GET['action'])) ? $_GET['action'] : 'list';
 
 // do some basic writing permissions checking first
-if(!is_writable(__FILE__)) {
+if(!is_writable(__FILE__))
 	error('The NanoBBS file is not writable - please chmod it to 0777.');
-}
 
 switch($action) {
 	
@@ -184,7 +186,7 @@ switch($action) {
 	
 			$_POST['name'] = htmlentities($_POST['name']);
 			if(empty($_POST['name']) || strpos(trim($_POST['name']), 'Anonymous') === 0) {
-				if(($number = check_topic_number($topic)) == -1)
+				if(($number = check_poster_number($topic)) == -1)
 					$number = count($topic);
 
 				if($number > 26)
@@ -207,7 +209,6 @@ switch($action) {
 			save($db);
 		}
 		
-		// header
 		template_header();
 		
 		template_topic_header($topic[0]['topicname']);
