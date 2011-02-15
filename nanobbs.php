@@ -52,8 +52,7 @@ function check_topic_flood($ip, $topics) {
 	$startTime = time();
 	ksort($topics, SORT_NUMERIC);
 	foreach(array_reverse($topics) as $topic) {
-		if($topic[0]['time'] + TIME_BETWEEN_TOPICS < 
-$startTime)
+		if($topic[0]['time'] + TIME_BETWEEN_TOPICS < $startTime)
 			return 0;
 		if($topic[0]['ip'] == $ip)
 			return $topic[0]['time'];
@@ -67,8 +66,7 @@ function check_post_flood($ip, $topics) {
 	foreach(array_reverse($topics) as $topic) {
 		ksort($topic, SORT_NUMERIC);
 		foreach(array_reverse($topic) as $id => $post) {
-			if($post['time'] + TIME_BETWEEN_POSTS < 
-$startTime) {
+			if($post['time'] + TIME_BETWEEN_POSTS < $startTime) {
 				if($id == 0)
 					return 0;
 				break;
