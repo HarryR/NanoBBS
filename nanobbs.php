@@ -3,7 +3,7 @@
 // configuration
 define('PAGE_TITLE', 'Nanochan BBS');
 
-$adminPasses = array('');
+$adminPasses = array();
 $modPasses = array();
 
 define('TIME_BETWEEN_TOPICS', 120);
