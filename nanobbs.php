@@ -15,6 +15,9 @@ define('SELF', $_SERVER['SCRIPT_NAME']);
 define('IS_ADMIN', (isset($_COOKIE['admin']) ?  in_array($_COOKIE['admin'], $adminPasses) : FALSE);
 define('IS_MOD', (isset($_COOKIE['mod']) ? in_array($_COOKIE['mod'], $modPasses) : FALSE);
 
+define('JS_VERSION', 1);
+define('CSS_VERSION', 1);
+
 if(isset($_COOKIE['sid']))
 	define('SID', $_COOKIE['sid']);
 else {
@@ -145,11 +148,11 @@ switch($action) {
 				$_POST['name'] = '</span>Anonymous <span class="author">A';
 
 			$db[] = array(	array(	'name' => $_POST['name'],
-									'topicname' => $_POST['topicname'],
-									'content' => nl2br(htmlentities($_POST['content'])),
-									'time' => time(),
-									'ip' => $_SERVER['REMOTE_ADDR'],
-									'sid' => SID ) );
+						'topicname' => $_POST['topicname'],
+						'content' => nl2br(htmlentities($_POST['content'])),
+						'time' => time(),
+						'ip' => $_SERVER['REMOTE_ADDR'],
+						'sid' => SID ) );
 									
 			save($db);
 			
@@ -196,10 +199,10 @@ switch($action) {
 			}
 			
 			$db[$_GET['id']][] = array(	'name' => $_POST['name'],
-										'content' => nl2br(htmlentities($_POST['content'])),
-										'time' => time(),
-										'ip' => $_SERVER['REMOTE_ADDR'],
-										'sid' => SID );
+							'content' => nl2br(htmlentities($_POST['content'])),
+							'time' => time(),
+							'ip' => $_SERVER['REMOTE_ADDR'],
+							'sid' => SID );
 			$topic = $db[$_GET['id']];
 			
 			// move topic to top
@@ -293,7 +296,7 @@ function template_header() {
 		
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 		
-		<link rel="stylesheet" type="text/css" href="<?php echo SELF; ?>?action=css&1" />
+		<link rel="stylesheet" type="text/css" href="<?php echo SELF; ?>?action=css&v=<?php echo CSS_VERSION; ?>" />
 		
 	</head>
 	
@@ -301,15 +304,15 @@ function template_header() {
 		<div id="inner">
 			<div id="header">
 				<h1><a class="logo" href="<?php echo SELF; ?>"><?php echo PAGE_TITLE; ?></a></h1>
-				<?php if(!IS_ADMIN): ?>
+<?php if(!IS_ADMIN): ?>
 				<form id="login_form" action="<?php echo SELF; ?>?action=login" method="post">
 					<input type="password" name="pwd" value="" /><input type="submit" value="Login" />
 				</form>
-				<?php else: ?>
+<?php else: ?>
 				<form id="login_form" action="<?php echo SELF; ?>?action=logout" method="post">
 					<input type="submit" value="Logout" />
 				</form>
-				<?php endif; ?>
+<?php endif; ?>
 			</div>
 			
 			<div id="content">
@@ -326,7 +329,7 @@ function template_footer() {
 			</div>
 			
 			<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-			<script type="text/javascript" src="<?php echo SELF; ?>?action=js&1"></script>
+			<script type="text/javascript" src="<?php echo SELF; ?>?action=js&v=<?php echo JS_VERSION; ?>"></script>
 		</div>
 	</body>
 
@@ -344,9 +347,9 @@ function template_index_header() {
 							<th class="topic_head topic_name">Name</th>
 							<th class="topic_head">Number of replies</th>
 							<th class="topic_head">Last bump</th>
-							<?php if(IS_ADMIN): ?>
+<?php if(IS_ADMIN): ?>
 							<th class="topic_head">Delete</th>
-							<?php endif; ?>
+<?php endif; ?>
 						</tr>
 					</thead>
 					<tbody class="topic_list">
@@ -359,9 +362,9 @@ function template_index_topic($id, $topic, $odd) {
 							<td><a class="topic_link topic_title" href="<?php echo SELF; ?>?action=topic&id=<?php echo $id; ?>"><?php echo htmlentities($topic[0]['topicname']); ?></a></td>
 							<td><?php echo count($topic) - 1; ?></td>
 							<td><?php echo date('d-m-Y H:i:s', $topic[end(array_keys($topic))]['time']); ?></td>
-							<?php if(IS_ADMIN): ?>
+<?php if(IS_ADMIN): ?>
 							<td><a href="<?php echo SELF; ?>?action=delete&id=<?php echo $id; ?>">X</a></td>
-							<?php endif; ?>
+<?php endif; ?>
 						</tr>
 <?php
 }
