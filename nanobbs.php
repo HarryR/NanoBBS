@@ -12,8 +12,8 @@ define('TIME_BETWEEN_POSTS', 30);
 
 define('START_TIME', _microtime());
 define('SELF', $_SERVER['SCRIPT_NAME']);
-define('IS_ADMIN', (isset($_COOKIE['admin']) ?  in_array($_COOKIE['admin'], $adminPasses) : FALSE);
-define('IS_MOD', (isset($_COOKIE['mod']) ? in_array($_COOKIE['mod'], $modPasses) : FALSE);
+define('IS_ADMIN', (isset($_COOKIE['admin'])) ?  in_array($_COOKIE['admin'], $adminPasses) : FALSE);
+define('IS_MOD', (isset($_COOKIE['mod'])) ? in_array($_COOKIE['mod'], $modPasses) : FALSE);
 
 define('JS_VERSION', 1);
 define('CSS_VERSION', 1);
@@ -21,7 +21,7 @@ define('CSS_VERSION', 1);
 if(isset($_COOKIE['sid']))
 	define('SID', $_COOKIE['sid']);
 else {
-	$sid = hash('sha256', rand() . rand() . uniqid() . rand() . rand());
+	$sid = hash('sha256', rand() . uniqid() . mt_rand());
 	define('SID', $sid);
 	setcookie('sid', $sid, time() + 315360000, dirname(SELF)); // 315360000 = 3600 * 24 * 365 * 10 = 10 years
 }
@@ -323,7 +323,7 @@ function template_footer() {
 			</div>
 			
 			<div id="footer">
-				<sub>Powered by NanoBBS - loaded in <?php echo END_TIME - START_TIME; ?> seconds.</sub>
+				<sub>Powered by <a href="http://github.com/Purgox/NanoBBS/">NanoBBS</a> - loaded in <?php echo END_TIME - START_TIME; ?> seconds.</sub>
 			</div>
 			
 			<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
@@ -631,20 +631,25 @@ function add_cite(id) {
 
 // 'db' functions
 function save($data) {
-	$contents = file_get_contents(__FILE__);
-	list($code, $db) = explode('//' . ' DB HERE', $contents);
-	
-	$new_contents = 	$code . '//' . ' DB HERE' . "\n" .
-					'function load() {' . "\n" .
-					'	return ' . var_export($data, TRUE) . ';' . "\n" .
-					'}' . "\n" . 
-					'?>';
-
-	file_put_contents(__FILE__, $new_contents);
+	$handle = fopen(__FILE__, 'r');
+	$code = fread($handle, __COMPILER_HALT_OFFSET__);
+	fclose($handle);
+	if(file_put_contents(__FILE__, $code . serialize($data)) === FALSE) {
+		error('Unable to save database. Is it chmodded to 0777?');
+	}
 }
 
-// DB HERE
 function load() {
-	return array();
+	$handle = fopen(__FILE__, 'r');
+	if(!$handle) {
+		error('Unable to open database. Is it chmodded to 0777?');
+	}
+
+	fseek($handle, __COMPILER_HALT_OFFSET__);
+	$data = unserialize(stream_get_contents($handle));
+	fclose($handle);
+	return $data;
 }
-?>
+
+// data goes after __halt_compiler(), serialized.
+__halt_compiler();a:0:{}
