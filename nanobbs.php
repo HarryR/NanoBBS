@@ -3,6 +3,12 @@
 // configuration
 define('PAGE_TITLE', 'Nanochan BBS');
 
+function getmongo() {
+	return new Mongo('mongodb://dep5ezna7wf:Rz32A5PxYgMgsFs@127.0.0.1/Rz32A5PxYgMgsFs');
+}
+$m = getmongo();
+$db_posts = $m->posts;
+
 $adminPasses = array();
 $modPasses = array();
 
@@ -98,15 +104,10 @@ function _microtime() {
 	return (float) $sec + (float) $usec;
 }
 
-// load database
-$db = load();
 
 // pick action
 $action = (isset($_GET['action'])) ? $_GET['action'] : 'list';
 
-// do some basic writing permissions checking first
-if(!is_writable(__FILE__))
-	error('The NanoBBS file is not writable - please chmod it to 0777.');
 
 switch($action) {
 	
@@ -117,7 +118,7 @@ switch($action) {
 		template_index_header();
 		
 		$i = 0;
-		foreach($db as $id => $topic) {
+		foreach( $db_posts->find() AS $id => $topic ) {
 			template_index_topic($id, $topic, $i % 2);
 			$i++;
 		}
@@ -129,7 +130,7 @@ switch($action) {
 	
 	case 'new':
 		if(isset($_POST['topicname']) && isset($_POST['name']) && isset($_POST['content'])) {
-			$time = check_topic_flood($_SERVER['REMOTE_ADDR'], $db);
+			$time = check_topic_flood($_SERVER['REMOTE_ADDR'], $db_posts);
 			if($time > 0) {
 				$time_to_wait = TIME_BETWEEN_TOPICS + $time - time();
 				error('Please wait another ' . $time_to_wait . ' seconds before creating another topic.');
@@ -145,16 +146,14 @@ switch($action) {
 			if(empty($_POST['name']))
 				$_POST['name'] = '</span>Anonymous <span class="author">A';
 
-			$db[] = array(	array(	'name' => $_POST['name'],
+			$new_id = $db_posts->insert(	array(	'name' => $_POST['name'],
 						'topicname' => $_POST['topicname'],
 						'content' => nl2br(htmlentities($_POST['content'])),
 						'time' => time(),
 						'ip' => $_SERVER['REMOTE_ADDR'],
 						'sid' => SID ) );
-									
-			save($db);
 			
-			redirect(SELF . '?action=topic&id=' . end(array_keys($db)));
+			redirect(SELF . '?action=topic&id=' . $new_id);
 		}
 		
 		// header
@@ -168,14 +167,14 @@ switch($action) {
 	break;
 	
 	case 'topic':
-		if(!isset($_GET['id']) || !isset($db[$_GET['id']])) {
+		if(!isset($_GET['id'])) {
 			redirect(SELF);
 		}
 		
-		$topic = $db[$_GET['id']];
-		
+		$topic = $db_posts->find( array('_id' => $_GET['id']) );
+
 		if(isset($_POST['name']) && isset($_POST['content'])) {
-			$time = check_post_flood($_SERVER['REMOTE_ADDR'], $db);
+			$time = check_post_flood($_SERVER['REMOTE_ADDR'], $db_posts);
 			if($time > 0) {
 				$time_to_wait = TIME_BETWEEN_POSTS + $time - time();
 				error('Please wait another ' . $time_to_wait . ' seconds before adding another reply.');
@@ -196,18 +195,11 @@ switch($action) {
 					$_POST['name'] = '</span>Anonymous <span class="author">' . chr(65 + $number);
 			}
 			
-			$db[$_GET['id']][] = array(	'name' => $_POST['name'],
+			$topic = $db_posts->insert(array(	'name' => $_POST['name'],
 							'content' => nl2br(htmlentities($_POST['content'])),
 							'time' => time(),
 							'ip' => $_SERVER['REMOTE_ADDR'],
-							'sid' => SID );
-			$topic = $db[$_GET['id']];
-			
-			// move topic to top
-			unset($db[$_GET['id']]);
-			$db = array($_GET['id'] => $topic) + $db;
-			
-			save($db);
+							'sid' => SID ));
 		}
 		
 		template_header();
@@ -261,18 +253,16 @@ switch($action) {
 	break;
 	
 	case 'delete':
-		if(IS_ADMIN && isset($_GET['id']) && isset($db[$_GET['id']])) {
-			unset($db[$_GET['id']]);
-			save($db);
+		if(IS_ADMIN && isset($_GET['id'])) {
+			$db_posts->remove( array('_id' => $_GET['ID']) )			
 		}
 	
 		redirect(SELF);
 	break;
 	
 	case 'deletepost':
-		if((IS_ADMIN || IS_MOD) && isset($_GET['topic']) && isset($_GET['post']) && isset($db[$_GET['topic']]) && isset($db[$_GET['topic']][$_GET['post']])) {
-			unset($db[$_GET['topic']][$_GET['post']]);
-			save($db);
+		if((IS_ADMIN || IS_MOD) && isset($_GET['topic']) && isset($_GET['post'])) {
+			$db_posts->remove( array('_id' => $_GET['post']) );
 		}
 	
 		redirect(SELF . '?action=topic&id=' . @$_GET['topic']);
