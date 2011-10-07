@@ -4,10 +4,10 @@
 define('PAGE_TITLE', 'Nanochan BBS');
 
 function getmongo() {
-	return new Mongo('mongodb://dep5ezna7wf:Rz32A5PxYgMgsFs@127.0.0.1/Rz32A5PxYgMgsFs');
+	return new Mongo('mongodb://127.0.0.1/nanobbs');
 }
 $m = getmongo();
-$db_posts = $m->posts;
+$db_posts = $m->selectDb('nanobbs')->selectCollection('posts');
 
 $adminPasses = array();
 $modPasses = array();
@@ -54,35 +54,6 @@ function error($message) {
 	exit();
 }
 
-function check_topic_flood($ip, $topics) {
-	$startTime = time();
-	ksort($topics, SORT_NUMERIC);
-	foreach(array_reverse($topics) as $topic) {
-		if($topic[0]['time'] + TIME_BETWEEN_TOPICS < $startTime)
-			return 0;
-		if($topic[0]['ip'] == $ip)
-			return $topic[0]['time'];
-	}
-	return 0;
-}
-
-function check_post_flood($ip, $topics) {
-	$startTime = time();
-	
-	foreach(array_reverse($topics) as $topic) {
-		ksort($topic, SORT_NUMERIC);
-		foreach(array_reverse($topic) as $id => $post) {
-			if($post['time'] + TIME_BETWEEN_POSTS < $startTime) {
-				if($id == 0)
-					return 0;
-				break;
-			}
-			if($post['ip'] == $ip)
-				return $post['time'];
-		}
-	}
-	return 0;
-}
 
 function check_poster_number($topic) {
 	ksort($topic, SORT_NUMERIC);
@@ -117,7 +88,7 @@ switch($action) {
 		template_index_header();
 		
 		$i = 0;
-		foreach( $db_posts->find() AS $id => $topic ) {
+		foreach( $db_posts->find( array('topic' => 0) ) AS $id => $topic ) {
 			template_index_topic($id, $topic, $i % 2);
 			$i++;
 		}
@@ -129,11 +100,7 @@ switch($action) {
 	
 	case 'new':
 		if(isset($_POST['topicname']) && isset($_POST['name']) && isset($_POST['content'])) {
-			$time = check_topic_flood($_SERVER['REMOTE_ADDR'], $db_posts);
-			if($time > 0) {
-				$time_to_wait = TIME_BETWEEN_TOPICS + $time - time();
-				error('Please wait another ' . $time_to_wait . ' seconds before creating another topic.');
-			}
+			
 			
 			$_POST['topicname'] = trim($_POST['topicname']);
 			if(empty($_POST['topicname']))
@@ -147,8 +114,10 @@ switch($action) {
 
 			$new_id = $db_posts->insert(	array(	'name' => $_POST['name'],
 						'topicname' => $_POST['topicname'],
+						'topic' => 0,
 						'content' => nl2br(htmlentities($_POST['content'])),
 						'time' => time(),
+						'sub_posts' => 0,
 						'ip' => $_SERVER['REMOTE_ADDR'],
 						'sid' => SID ) );
 			
@@ -166,19 +135,18 @@ switch($action) {
 	break;
 	
 	case 'topic':
+
 		if(!isset($_GET['id'])) {
 			redirect(SELF);
 		}
-		
-		$topic = $db_posts->find( array('_id' => $_GET['id']) );
 
-		if(isset($_POST['name']) && isset($_POST['content'])) {
-			$time = check_post_flood($_SERVER['REMOTE_ADDR'], $db_posts);
-			if($time > 0) {
-				$time_to_wait = TIME_BETWEEN_POSTS + $time - time();
-				error('Please wait another ' . $time_to_wait . ' seconds before adding another reply.');
-			}
-			
+		$header_topic = $db_posts->findOne( array('_id' => $_GET['id']) );
+		if( $header_topic === NULL ){
+			//redirect(SELF);
+		}
+		
+		$topic = $db_posts->find( array('topic' => $_GET['id']) );
+		if(isset($_POST['name']) && isset($_POST['content'])) {					
 			$_POST['content'] = trim($_POST['content']);
 			if(empty($_POST['content']))
 				error('The post body can not be blank.');
@@ -194,16 +162,21 @@ switch($action) {
 					$_POST['name'] = '</span>Anonymous <span class="author">' . chr(65 + $number);
 			}
 			
-			$topic = $db_posts->insert(array(	'name' => $_POST['name'],
+			$db_posts->update( array('_id' => $_GET['id']), array('$inc' => array("sub_posts" => 1)));
+			$topic_id = $db_posts->insert(array(	'name' => $_POST['name'],
+							'topic' => $_GET['id'],
 							'content' => nl2br(htmlentities($_POST['content'])),
 							'time' => time(),
 							'ip' => $_SERVER['REMOTE_ADDR'],
 							'sid' => SID ));
+			$topic = $db_posts->find( array('topic' => $_GET['id']) );
 		}
 		
 		template_header();
 		
-		template_topic_header($topic[0]['topicname']);
+		
+	//	print_r($header_topic);
+		template_topic_header($header_topic['topicname']);
 		if(!IS_ADMIN && !IS_MOD)
 			foreach($topic as $id => $post)
 				template_topic_post($id, $post);
@@ -333,7 +306,6 @@ function template_index_header() {
 						<tr>
 							<th class="topic_head topic_name">Name</th>
 							<th class="topic_head">Number of replies</th>
-							<th class="topic_head">Last bump</th>
 <?php if(IS_ADMIN): ?>
 							<th class="topic_head">Delete</th>
 <?php endif; ?>
@@ -346,9 +318,9 @@ function template_index_header() {
 function template_index_topic($id, $topic, $odd) {
 ?>
 						<tr class="<?php if($odd): ?>odd<?php else: ?>even<?php endif; ?>">
-							<td><a class="topic_link topic_title" href="<?php echo SELF; ?>?action=topic&id=<?php echo $id; ?>"><?php echo htmlentities($topic[0]['topicname']); ?></a></td>
-							<td><?php echo count($topic) - 1; ?></td>
-							<td><?php echo date('d-m-Y H:i:s', $topic[end(array_keys($topic))]['time']); ?></td>
+							<td><a class="topic_link topic_title" href="<?php echo SELF; ?>?action=topic&id=<?php echo $id; ?>"><?php echo htmlentities($topic['topicname']); ?></a></td>
+							<td><?php printf('%d', $topic['sub_posts']); ?></td>
+							
 <?php if(IS_ADMIN): ?>
 							<td><a href="<?php echo SELF; ?>?action=delete&id=<?php echo $id; ?>">X</a></td>
 <?php endif; ?>
@@ -406,7 +378,7 @@ function template_topic_header($title) {
 function template_topic_post($id, $post) {
 ?>
 				<div class="post" id="post_<?php echo $id; ?>">
-					<div class="author"><span class="author"><?php echo $post['name']; ?></span> said at <span class="date"><?php echo date('d-m-Y H:i:s', $post['time']); ?></span>: <a href="#reply" class="quote_link right" onclick="add_cite(<?php echo $id; ?>);">#<strong><?php echo $id; ?></strong></a></div>
+					<div class="author"><span class="author"><?php echo $post['name']; ?></span> said <a href="#reply" class="quote_link right" onclick="add_cite(<?php echo $id; ?>);">#<strong><?php echo $id; ?></strong></a></div>
 					<div class="content">
 						<?php echo $post['content']; ?>
 					</div>
@@ -417,7 +389,7 @@ function template_topic_post($id, $post) {
 function template_topic_post_mod($id, $post, $topicid) {
 ?>
 				<div class="post" id="post_<?php echo $id; ?>">
-					<div class="author"><span class="author"><?php echo $post['name']; ?></span> said at <span class="date"><?php echo date('d-m-Y H:i:s', $post['time']); ?></span>: (<span class="ip"><?php echo $post['ip']; ?></span>) <a href="<?php echo SELF; ?>?action=deletepost&topic=<?php echo $topicid; ?>&post=<?php echo $id; ?>" class="delete_link right">&nbsp;delete</a> <a href="#reply" class="quote_link right" onclick="add_cite(<?php echo $id; ?>);">#<strong><?php echo $id; ?></strong></a></div>
+					<div class="author"><span class="author"><?php echo $post['name']; ?></span> said (<span class="ip"><?php echo $post['ip']; ?></span>) <a href="<?php echo SELF; ?>?action=deletepost&topic=<?php echo $topicid; ?>&post=<?php echo $id; ?>" class="delete_link right">&nbsp;delete</a> <a href="#reply" class="quote_link right" onclick="add_cite(<?php echo $id; ?>);">#<strong><?php echo $id; ?></strong></a></div>
 					<div class="content">
 						<?php echo $post['content']; ?>
 					</div>
@@ -639,6 +611,3 @@ function load() {
 	fclose($handle);
 	return $data;
 }
-
-// data goes after __halt_compiler(), serialized.
-__halt_compiler();a:0:{}
