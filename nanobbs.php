@@ -108,7 +108,6 @@ function _microtime() {
 // pick action
 $action = (isset($_GET['action'])) ? $_GET['action'] : 'list';
 
-
 switch($action) {
 	
 	case 'list':
@@ -254,7 +253,7 @@ switch($action) {
 	
 	case 'delete':
 		if(IS_ADMIN && isset($_GET['id'])) {
-			$db_posts->remove( array('_id' => $_GET['ID']) )			
+			$db_posts->remove( array('_id' => $_GET['ID']) );		
 		}
 	
 		redirect(SELF);
