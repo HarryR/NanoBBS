@@ -1,0 +1,116 @@
+body {
+	font-family: helvetica, arial, sans-serif;
+	background-color: #cae6c1;
+	font-size: 85%;
+}
+h2 {
+	color: red;
+	padding-bottom: 3px;
+	margin-bottom: 5px;
+}
+.right {
+	float: right;
+}
+a.delete_link {
+	text-decoration: none;
+}
+a.logo {
+	color: inherit;
+	text-decoration: none;
+}
+a.logo:hover {
+	text-decoration: line-through;
+}
+a.new_topic_link {
+	float: right;
+	margin-top: 3px;
+	margin-right: 8px;
+	color: grey;
+	text-decoration: none;
+}
+a.new_topic_link:hover {
+	background-color: #ecfae8;
+	border-bottom: 1px dashed red;
+}
+a.topic_link {
+	text-decoration: none;
+	color: black;
+}
+a.quote_link {
+	text-decoration: none;
+	color: red;
+	font-size: 95%;
+}
+form#login_form {
+	float: right;
+	display: inline;
+}
+form#reply_form {
+}
+span.author {
+	font-weight: bold;
+}
+span.date {
+	font-style: italic;
+}
+span.greentext {
+	color: #789922;
+}
+span.ip {
+	color: red;
+}
+div.author {
+	background-color: #97cc88;
+	padding: 5px;
+	padding-left: 6px;
+	font-size: 93%;
+}
+div.content {
+	padding: 2px;
+	padding-left: 6px;
+	padding-top: 4px;
+	font-size: 90%;
+}
+div#error {
+	background-color: #ecfae8;
+	padding: 3px;
+	border-left: 2px dashed red;
+}
+div.post {
+	padding-bottom: 4px;
+	margin-bottom: 8px;
+	background-color: #bddeb4;
+}
+div.post.highlighted {
+	background-color: #ecfae8;
+	border-bottom: 2px dashed red;
+}
+table {
+	border-collapse: collapse;
+	margin-left: -8px;
+}
+table.topic_list {
+	width: 100%;
+}
+th.topic_head {
+	background-color: #97cc88;
+	text-align: left;
+}
+th.topic_id {
+	width: 50px;
+}
+th.topic_name {
+	width: 65%;
+}
+td, th {
+	padding: 6px;
+}
+tr:hover td {
+	background-color: #ecfae8;
+}
+tr.even {
+	background-color: #abd69e;
+}
+tr.odd {
+	background-color: #bddeb4;
+}
