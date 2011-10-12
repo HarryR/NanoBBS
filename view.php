@@ -66,7 +66,7 @@ function template_topic_detail($topic, $replies) {
 				<?php endif; ?>
 
 				<?php if( !empty($reply['title']) ): ?>
-				<div class="title"><?php echo $reply['title']; ?>
+				<div class="title"><?php echo htmlspecialchars($reply['title']); ?>
 					<?php if( intval($reply['c']) ): ?>
 						<span class="post_subcount">+<?php echo intval($reply['c']) ?></span>				
 					<?php endif; ?>
@@ -74,7 +74,7 @@ function template_topic_detail($topic, $replies) {
 				<?php endif; ?>
 				<div class="post_info">					
 					<a href="/<?php echo gimme_link($reply) . $reply_id ?>.html">				
-						<span class="post_author"><?php echo $reply['name']; ?></span>						
+						<span class="post_author"><?php echo htmlspecialchars($reply['name']); ?></span>						
 						<span class="post_id">#id:<?php echo $reply_id; ?></span>
 
 						<span class="post_when"><?php echo date('H:i, Y-m-d', $reply['w']) ?></span>
