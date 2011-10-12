@@ -52,7 +52,7 @@ class bbs {
 	find_replies( $topic_id ) {
 		if( ! $topic_id ) return NULL;
 		check_topic_id($topic_id);
-		return $this->topics->find( array( 'p' => $topic_id ) )->sort('c' => -1);
+		return $this->topics->find( array( 'p' => $topic_id ) )->sort(array('c' => -1));
 	}
 
 	/** Adds a post to the topic */
