@@ -1,17 +1,18 @@
 <?php
-// template functions
-function template_header( $breadcrumbs = NULL ) {
-	if( is_array($breadcrumbs) ) {
-		$breadcrumbs = ' - ' . implode(' - ', $breadcrumbs);
-	}
-	else if( strlen($breadcrumbs) ) {
-		$breadcrumbs = ' - ' . $breadcrumbs;
-	}
+function error($message = 'Not Found', $code = 404) {
+	header(sprintf('HTTP/1.0 %d %s', $code, $message));
+	template_header();
+	dispay_a_friggin_narwhal($message);
+	template_footer();
+	exit;	
+}
+
+function template_header() {
 ?>
 <!DOCTYPE html>
 <html>
 	<head>
-		<title><?php echo SITE_TITLE . $breadcrumbs; ?></title>
+		<title><?php echo SITE_TITLE; ?></title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<link rel="stylesheet" type="text/css" href="<?php echo CSS_URL; ?>" />
 		
@@ -19,143 +20,81 @@ function template_header( $breadcrumbs = NULL ) {
 	
 	<body>
 		<div id="inner">
-			<div class="right">
-				<a class="new_topic_link" href="/post"><?= NEW_TOPIC_TITLE ?></a>
-			</div>
 			<div id="content">
 <?php
 }
 
 function template_footer() {
-	define('END_TIME', microtime(TRUE));
 ?>
-			</div>
-			
-			<div id="footer">
-				<sub><?= sprintf(FOOTER_TEXT, END_TIME - START_TIME) ?></sub>			
-			</div>
+			</div>			
 		</div>
 	</body>
-
 </html>
 <?php
 }
 
-function template_index_header() {
+function template_topic_detail($topic, $replies) {
 ?>
-	<h2><?= TOPIC_TITLE ?></h2>
-	
-	<table class="topic_list">
-		<thead>
-			<tr>
-				<th class="topic_head topic_id">ID</th>
-				<th class="topic_head topic_name">Name</th>
-				<th class="topic_head topic_when">When</th>
-				<th class="topic_head"># <?= REPLY_TITLE ?></th>
-			</tr>
-		</thead>
-		<tbody class="topic_list">
+	<div class="topic" id="topic_<?php echo $topic['_id'] ?>">
+		<div class="topic_header">
+			<h2><?php echo htmlentities($topic['title']); ?></h2>
+			<div class="topic_body">
+				<?php echo htmlentities($topic['body']) ?>
+			</div>
+		</div>
+
+		<?php $i = 0; ?>
+		<?php foreach( $replies AS $reply_id => $reply ): ?>
+		<div class="post" id="post_<?php echo $topic['_id'].$reply_id; ?>">
+			<div class="post_header">
+				<?php if( !empty($reply['title']) ): ?>
+				<div class="title"><?php echo $reply['title']; ?>
+					<?php if( intval($reply['c']) ): ?>
+						<span class="post_subcount">+<?php echo intval($reply['c']) ?></span>				
+					<?php endif; ?>
+				</div>	
+				<?php endif; ?>
+				<div class="post_info">
+					<a href="/<?php echo gimme_link($reply) . $reply_id ?>.html">				
+						<span class="post_author"><?php echo $reply['name']; ?></span>						
+						<span class="post_id">#id:<?php echo $reply_id; ?></span>
+
+						<span class="post_when"><?php echo date('H:i, Y-m-d', $reply['w']) ?></span>
+					</a>
+				</div><!-- .post_info -->
+			</div>
+			<div class="content">
+				<?php echo nl2br(htmlentities($reply['body'])); ?>
+			</div>
+		</div>
+		<?php endforeach ?>
+		
+		<?php template_topic_reply_form($topic['p'], $topic['_id'], can_add_to($topic)); ?>
+	</div><!-- .topic -->
 <?php
 }
 
-function template_index_topic($id, $topic) {
-?>
-	<tr>
-		<td><small><code><?= $topic['_id'] ?></code></small></td>
-		<td>
-			<a class="topic_link topic_title" href="/<?= $id ?>">
-				<?= htmlentities($topic['title']); ?>
-			</a>
-		</td>
-		<td>
-			<?= date('Y-m-d H:i', $topic['w']) ?>
-		</td>
-		<td><?= sprintf('%d', $topic['c']); ?></td>	
-	</tr>
-<?php
-}
+function template_topic_reply_form($parent_id, $id, $can_add) {
+?>	
+	<form id="reply_form" method="post">
+	<?php if( $can_add ): ?>		
+		<label for="reply_title"><?php echo REPLY_TITLE_FIELD ?></label>
+		<input type="text" id="reply_title" name="title" maxlength="100" /><br /><br />
 
-function template_index_footer() {
-?>
-		</tbody>
-		<tfoot>
-			<tr>
-			</tr>
-		</tfoot>
-	</table>	
-<?php
-}
-
-function template_new_header() {
-?>
-	<h2><?= NEW_TOPIC_TITLE ?></h2>
-<?php
-}
-
-function template_new_form() {
-?>
-	<form action="/post" method="post">
-		Title<br />
-		<input type="text" name="title" maxlength="100" /><br />
-		<?= REPLY_NAME_FIELD ?><br />
-		<sub><?= REPLY_NOTE ?></sub><br />
-		<input type="text" name="name" maxlength="100" /><br />
-		<?= REPLY_CONTENT_FIELD ?><br />
-		<textarea name="body" rows="6" cols="50"></textarea><br />
-		<input type="submit" value="<?= ADD_TITLE ?>" />
+		<label for="reply_name"><?php echo REPLY_NAME_FIELD ?></label>
+		<input type="text" id="reply_name" name="name" maxlength="100" /><br /><br />
+		
+		<textarea id="reply" id="reply_body" name="body" rows="6" cols="40"></textarea><br />
+		<input type="submit" value="<?php echo REPLY_TITLE ?>" />
+	<?php else: ?>
+		<h2>Topic Closed</h2>
+	<?php endif; ?>
 	</form>
 <?php
 }
 
-function template_new_footer() {
+function dispay_a_friggin_narwhal($message = 'Moar Narwhals') {
 ?>
-	<sub>Please don't post anything illegal, kthxbye.</sub>
-<?php
-}
-
-function template_topic_header($topic) {
-?>
-	<h2>Topic: <?= htmlentities($topic['title']); ?></h2>
-	<div>
-		<?= htmlentities($topic['body']) ?>
-	</div>
-<?php
-}
-
-function template_topic_post($topic_id, $post_id, $post) {
-?>
-	<div class="post" id="post_<?= $topic_id.$post_id; ?>">
-		<div class="author">
-			<span class="author"><?= $post['name']; ?></span>
-			<small>@ <?= date('Y-m-d H:i', $post['w']) ?></small>			
-			<a href="#reply" class="quote_link right">
-				#<code><?= $post_id; ?></code>
-			</a>
-		</div>
-		<div class="content">
-			<?php echo $post['body']; ?>
-		</div>
-	</div>
-<?php
-}
-
-function template_topic_reply_form($id) {
-?>
-	<h3><?= REPLY_TITLE ?></h3>
-	<form id="reply_form" action="/<?= $id ?>" method="post">
-		<a name="reply"></a>
-		<?= REPLY_NAME_FIELD ?><br />
-		<sub><?= REPLY_NOTE ?></sub><br />
-		<input type="text" name="name" maxlength="100" /><br />
-		<?= REPLY_CONTENT_FIELD ?><br />
-		<textarea id="reply" name="body" rows="6" cols="50"></textarea><br />
-		<input type="submit" value="<?= REPLY_TITLE ?>" />
-	</form>
-<?php
-}
-
-function template_topic_footer() {
-?>
-				
-<?php
+<a href="<?php echo gimme_random(12) ?>.html"><img alt="<?php echo $message ?>" src="narwhal.png" id="narwhal" /></a>
+<?php	
 }

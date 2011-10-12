@@ -7,22 +7,24 @@ date_default_timezone_set('UTC');
 # - Edit the following fields
 
 // Translatable fields
-define('SITE_TITLE', 'Mongochan');
+
+define('LINK_CODE', 'p6n6');
+define('LINK_SECRET', 'derp');
+define('TOPIC_LIMIT', 25);
+
+define('SITE_TITLE', 'Nar Nine Kay');
 define('TOPIC_TITLE', 'Topic');
 define('DELETE_TITLE', 'Delete');
 define('NEW_TOPIC_TITLE', 'New Topic');
 define('ADD_TITLE', 'Add');
 define('REPLY_TITLE', 'Reply');
 define('REPLY_NAME_FIELD', 'Name');
+define('REPLY_TITLE_FIELD','Title');
 define('REPLY_CONTENT_FIELD', 'Body');
-define('REPLY_NOTE', 'Tripcodes supported');
-define('FOOTER_TEXT', 'Powered by <a href="http://mongodb.org/">MongoDB</a> and <a href="https://github.com/Purgox/NanoBBS">NanoBBS</a> - loaded in %.4f seconds');
 
 // URLs
 define('BASE_URL', 'http://localhost:8888/');
 define('CSS_URL', 'style.css');
-define('HOME_URL', '');
-define('SELF', HOME_URL);
 
 // Anti Spam
 define('TIME_BETWEEN_TOPICS', 120);
@@ -31,94 +33,96 @@ define('TIME_BETWEEN_POSTS', 30);
 # End of Configuration
 ###############################################################################
 
+function param($name, $default = NULL) {
+	if (!isset($_REQUEST[$name])) {
+		return $default;
+	}
+	return $_REQUEST[$name];
+}
+
 try {
 	require_once('model.php');
 	require_once('view.php');
-	require_once('util.php');
 	$bbs = bbs::instance();
 }
 catch( Excepiton $ex ) {
 	error($ex->getMessage());
 }
 
-define('START_TIME', microtime(TRUE));
+($ice = param('ice')) || error('Cannot Break Ice');	
+($pak = param('pak')) || error('What Do You Want');
 
-switch( param('a', 'list') ) {
-case 'list':
-	template_header();
-	template_index_header();
-	foreach( $bbs->all_topics() AS $id => $topic ) {
-		template_index_topic($id, $topic);
-	}
-	template_index_footer();
-	template_footer();
-break;
+narwhal($bbs,$ice,$pak);
 
-case 'list-json':
-	header('Content-Type: application/json');
-	echo json_encode(iterator_to_array($bbs->all_topics()));
-break;
+function gimme_link( $topic ) {
+	return gimme_random(6,$topic['p'].$topic['_id']);
+}
 
-case 'new':	
-	if( strlen( $title = trim(param('title')) ) > 2
-	 && strlen( $name = trim(param('name')) ) > 2
-	 && strlen( $body = trim(param('body')) ) 
-	){
-		$post = compact('title','name','body');
-		$post['_id'] = $bbs->add_topic($post);
-		header('Location: /'.$post['_id']);
-		exit;
-	}
-	template_header();	
-	template_new_header();
-	template_new_form();
-	template_new_footer();
-	template_footer();
-break;
+function censor($topic) {
+	unset($topic['p']);
+	unset($topic['name']);
+	return $topic;
+}
 
-case 'topic-json':
-	$topic_id = param('id');
-	$topic = $bbs->find_topic($topic_id);
+function can_add_to( $topic ) {
+	return (!isset($topic['c']) || $topic['c'] < TOPIC_LIMIT);
+}
 
-	if( $topic_id && $topic ) {
-		$replies = $bbs->find_replies($topic_id);
-		header('Content-Type: application/json');
+function narwhal( $bbs, $ice, $pak ) {
+	assert( strlen($ice) == 12 );
 
-		echo json_encode(array(
-			'topic' => $topic,
-			'replies' => iterator_to_array($replies),
-		));
-	}
-break;
+	$entry_id = substr($ice, 0, 6);	
+	$topic_id = substr($ice, 6, 6);	
 
-case 'topic':
-	($topic_id = param('id'))
-	or error('No topic passed');
+	($topic = $bbs->find_topic($topic_id)) || error('Cannot Find Topic');
 
-	($topic = $bbs->find_topic($topic_id))
-	or error('Cannot find topic');
-	
+	$calced_entry_id = gimme_link($topic); 
+
+	( $calced_entry_id != $entry_id) && error('Cannot Find Topic');
 	$replies = $bbs->find_replies($topic_id);
 
-	if( strlen( $name = trim(param('name')) ) > 2
-	 && strlen( $body = trim(param('body')))
-	){
-		$post = compact('name','body');
-		$post['_id'] = $bbs->add_reply($topic_id, $post);
-		header('Location: /'.$topic_id);
-		exit;
+	switch( $pak ) {
+	case 'bson':
+		header('Content-Type: application/bson');
+		echo bson_encode(array(
+			'topic' => censor($topic),
+			'replies' => iterator_to_array($replies),
+		));
+
+	case 'json':
+		header('Content-Type: application/json');
+		echo json_encode(array(
+			'topic' => censor($topic),
+			'replies' => iterator_to_array($replies),
+		));
+	break;
+
+	case 'html':
+		if( can_add_to($topic['c'])
+		 && strlen( $title = trim(param('title'))) >= 0
+		 && strlen( $name = trim(param('name'))) >= 0
+		 && strlen( $body = trim(param('body')))
+		){
+			if( strlen($title) < 100
+			 && strlen($name) < 50
+			 && strlen($body) < 2048
+			){
+				if( empty($name) ) {
+					$name = 'Anonymous!'.LINK_CODE.LINK_SECRET;
+				}
+				$post = compact('title','name','body');
+				$post = $bbs->add_reply($topic_id, $post);
+			}
+		}
+
+		template_header();
+		template_topic_detail($topic, $replies);
+		template_footer();
+	break;	
+
+	default:	
+		error('Try Harder');
+	break;
 	}
-
-	template_header();
-	template_topic_header($topic);
-	foreach($replies as $id => $post)
-		template_topic_post($topic_id, $id, $post);
-	template_topic_reply_form($_GET['id']);
-	template_topic_footer();
-	template_footer();
-break;
-
-default:
-	redirect(SELF);
-break;
 }
+

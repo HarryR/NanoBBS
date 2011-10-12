@@ -1,116 +1,133 @@
-body {
-	font-family: helvetica, arial, sans-serif;
-	background-color: #cae6c1;
-	font-size: 85%;
+#narwhal {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	width: 200px;
+	height: 200px;
+	margin: auto;	
+	opacity: 0.3;
 }
-h2 {
-	color: red;
-	padding-bottom: 3px;
+
+#narwhal:hover {
+	opacity: 1;
+}
+
+body {
+	background: #383d39;
+
+	color: #666;
+	font-family: ‘Palatino Linotype’, ‘Book Antiqua’, Palatino, Georgia, serif;
+}
+
+a, p, .post_info {
+	font-family: Verdana, Helvetica, Arial, sans-serif;
+}
+
+h1, h2, h3, .post_header {
+	color: #888;
+}
+
+.topic {
+	width: 450px;
+	border-radius: 10px;
+	color: #333;
+	padding: 0;
+	border: 2px solid #333;
+	background: #efefef;
+}
+
+.topic_body {
+	padding: 5px;
+	padding-left: 0;
+}
+
+.topic_header {
+	padding: 10px;
+}
+
+.topic_header h2 {
+	margin: 0;
+}
+
+.post_header {
+	font-size: 12px;	
+	color: #333;
+	padding: 5px;
+
+	background: #ddd;
+background-image: linear-gradient(bottom, rgb(245,245,245) 12%, rgb(204,204,204) 100%);
+background-image: -o-linear-gradient(bottom, rgb(245,245,245) 12%, rgb(204,204,204) 100%);
+background-image: -moz-linear-gradient(bottom, rgb(245,245,245) 12%, rgb(204,204,204) 100%);
+background-image: -webkit-linear-gradient(bottom, rgb(245,245,245) 12%, rgb(204,204,204) 100%);
+background-image: -ms-linear-gradient(bottom, rgb(245,245,245) 12%, rgb(204,204,204) 100%);
+
+background-image: -webkit-gradient(
+	linear,
+	left bottom,
+	left top,
+	color-stop(0.12, rgb(245,245,245)),
+	color-stop(1, rgb(204,204,204))
+);
+	border-top: 1px solid #bbb;
+}
+
+.post_header .title {
+	font-weight: bold;
+	font-size: 14px;
+	padding-bottom: 5px;
+	border-bottom: 1px solid #ccc;
 	margin-bottom: 5px;
 }
-.right {
+
+.post_info {
+	font-size: 10px;
+}
+
+.post_when {
 	float: right;
 }
-a.delete_link {
-	text-decoration: none;
-}
-a.logo {
-	color: inherit;
-	text-decoration: none;
-}
-a.logo:hover {
-	text-decoration: line-through;
-}
-a.new_topic_link {
-	float: right;
-	margin-top: 3px;
-	margin-right: 8px;
-	color: grey;
-	text-decoration: none;
-}
-a.new_topic_link:hover {
-	background-color: #ecfae8;
-	border-bottom: 1px dashed red;
-}
-a.topic_link {
-	text-decoration: none;
-	color: black;
-}
-a.quote_link {
-	text-decoration: none;
-	color: red;
-	font-size: 95%;
-}
-form#login_form {
-	float: right;
-	display: inline;
-}
-form#reply_form {
-}
-span.author {
-	font-weight: bold;
-}
-span.date {
-	font-style: italic;
-}
-span.greentext {
-	color: #789922;
-}
-span.ip {
-	color: red;
-}
-div.author {
-	background-color: #97cc88;
+
+.post .content {
+	background: #fff;
 	padding: 5px;
-	padding-left: 6px;
-	font-size: 93%;
+	padding-bottom: 15px;
+	font-size: 14px;
 }
-div.content {
-	padding: 2px;
-	padding-left: 6px;
-	padding-top: 4px;
-	font-size: 90%;
+
+.post_subcount {
+	float: right;
 }
-div#error {
-	background-color: #ecfae8;
-	padding: 3px;
-	border-left: 2px dashed red;
+
+a, .post_info {
+	text-decoration: none;
+	color: #666;
 }
-div.post {
-	padding-bottom: 4px;
-	margin-bottom: 8px;
-	background-color: #bddeb4;
+
+#reply_form h2 {
+	color: white;
 }
-div.post.highlighted {
-	background-color: #ecfae8;
-	border-bottom: 2px dashed red;
-}
-table {
-	border-collapse: collapse;
-	margin-left: -8px;
-}
-table.topic_list {
-	width: 100%;
-}
-th.topic_head {
-	background-color: #97cc88;
-	text-align: left;
-}
-th.topic_id {
-	width: 50px;
-}
-th.topic_name {
-	width: 65%;
-}
-td, th {
-	padding: 6px;
-}
-tr:hover td {
-	background-color: #ecfae8;
-}
-tr.even {
-	background-color: #abd69e;
-}
-tr.odd {
-	background-color: #bddeb4;
+
+#reply_form {
+	padding: 10px;
+	color: #FFF;
+	background: #d4414b;
+	margin-bottom: 10px;
+
+background-image: linear-gradient(bottom, rgb(166,45,55) 0%, rgb(212,65,75) 100%);
+background-image: -o-linear-gradient(bottom, rgb(166,45,55) 0%, rgb(212,65,75) 100%);
+background-image: -moz-linear-gradient(bottom, rgb(166,45,55) 0%, rgb(212,65,75) 100%);
+background-image: -webkit-linear-gradient(bottom, rgb(166,45,55) 0%, rgb(212,65,75) 100%);
+background-image: -ms-linear-gradient(bottom, rgb(166,45,55) 0%, rgb(212,65,75) 100%);
+
+background-image: -webkit-gradient(
+	linear,
+	left bottom,
+	left top,
+	color-stop(0, rgb(166,45,55)),
+	color-stop(1, rgb(212,65,75))
+);
+
+
 }
