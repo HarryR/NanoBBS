@@ -33,10 +33,24 @@ function template_footer() {
 <?php
 }
 
+function make_srl( $input ) {
+	return sprintf('<a href="/%s.html">%s</a>', $input[1], $input[0]);
+}
+
+function format_body( $content ) {
+	$content = preg_replace('/\n+/',"\n", $content);
+	$content = preg_replace_callback('/>>(?P<c>[a-z0-9]):(?P<i>[a-zA-Z0-9]{6})<<\b/', 'make_srl', $content);
+	return $content;
+}
+
 function template_topic_detail($topic, $replies) {
 ?>
 	<div class="topic" id="topic_<?php echo $topic['_id'] ?>">
 		<div class="topic_header">
+			<?php if( !empty($topic['x']) ): ?>
+				<img class="topic_icon" src="<?php echo $topic['x'] ?>" width="32" height="32" />
+			<?php endif; ?>
+
 			<h2><?php echo htmlentities($topic['title']); ?></h2>
 			<div class="topic_body">
 				<?php echo htmlentities($topic['body']) ?>
@@ -47,6 +61,10 @@ function template_topic_detail($topic, $replies) {
 		<?php foreach( $replies AS $reply_id => $reply ): ?>
 		<div class="post" id="post_<?php echo $topic['_id'].$reply_id; ?>">
 			<div class="post_header">
+				<?php if( !empty($reply['x']) ): ?>
+					<img class="post_icon" src="<?php echo $reply['x'] ?>" width="32" height="32" />
+				<?php endif; ?>
+
 				<?php if( !empty($reply['title']) ): ?>
 				<div class="title"><?php echo $reply['title']; ?>
 					<?php if( intval($reply['c']) ): ?>
@@ -54,7 +72,7 @@ function template_topic_detail($topic, $replies) {
 					<?php endif; ?>
 				</div>	
 				<?php endif; ?>
-				<div class="post_info">
+				<div class="post_info">					
 					<a href="/<?php echo gimme_link($reply) . $reply_id ?>.html">				
 						<span class="post_author"><?php echo $reply['name']; ?></span>						
 						<span class="post_id">#id:<?php echo $reply_id; ?></span>
@@ -63,8 +81,8 @@ function template_topic_detail($topic, $replies) {
 					</a>
 				</div><!-- .post_info -->
 			</div>
-			<div class="content">
-				<?php echo nl2br(htmlentities($reply['body'])); ?>
+			<div class="content">				
+				<?php echo nl2br(format_body(htmlentities($reply['body']))); ?>
 			</div>
 		</div>
 		<?php endforeach ?>
@@ -76,13 +94,17 @@ function template_topic_detail($topic, $replies) {
 
 function template_topic_reply_form($parent_id, $id, $can_add) {
 ?>	
-	<form id="reply_form" method="post">
+	<form id="reply_form" method="post" enctype="multipart/form-data">
 	<?php if( $can_add ): ?>		
 		<label for="reply_title"><?php echo REPLY_TITLE_FIELD ?></label>
 		<input type="text" id="reply_title" name="title" maxlength="100" /><br /><br />
 
 		<label for="reply_name"><?php echo REPLY_NAME_FIELD ?></label>
 		<input type="text" id="reply_name" name="name" maxlength="100" /><br /><br />
+
+		<label for="reply_icon"><?php echo REPLY_ICON_FIELD ?></label>
+		<input type="file" id="reply_icon" name="icon" /><br />
+		<small>(max 32px square, max 32 KiB, PNG image)</small><br /><br />
 		
 		<textarea id="reply" id="reply_body" name="body" rows="6" cols="40"></textarea><br />
 		<input type="submit" value="<?php echo REPLY_TITLE ?>" />

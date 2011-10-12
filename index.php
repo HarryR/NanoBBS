@@ -20,6 +20,7 @@ define('ADD_TITLE', 'Add');
 define('REPLY_TITLE', 'Reply');
 define('REPLY_NAME_FIELD', 'Name');
 define('REPLY_TITLE_FIELD','Title');
+define('REPLY_ICON_FIELD','Icon');
 define('REPLY_CONTENT_FIELD', 'Body');
 
 // URLs
@@ -49,6 +50,17 @@ catch( Excepiton $ex ) {
 	error($ex->getMessage());
 }
 
+if( param('ice') == NULL && param('bootstrap') == LINK_SECRET ) {
+	$tmp = gimme_random();
+	$post = $bbs->add_reply($tmp, array(
+		'title' => 'Welcome',
+		'name' => 'Bootstrap!'.LINK_CODE.LINK_SECRET,
+		'body' => 'Use this bootstrap post for your own convenience :)',
+	));
+	$_REQUEST['ice'] = gimme_link($post) . $post['_id'];
+	$_REQUEST['pak'] = 'html';
+}
+
 ($ice = param('ice')) || error('Cannot Break Ice');	
 ($pak = param('pak')) || error('What Do You Want');
 
@@ -65,7 +77,30 @@ function censor($topic) {
 }
 
 function can_add_to( $topic ) {
-	return (!isset($topic['c']) || $topic['c'] < TOPIC_LIMIT);
+	return (intval($topic['c']) < TOPIC_LIMIT);
+}
+
+function data_uri($contents, $mime) {
+    $base64 = base64_encode($contents);
+    return "data:$mime;base64,$base64";
+}
+
+function handle_upload( $name ) {
+	if( ! isset($_FILES[$name]) ) return NULL;
+	$f = $_FILES[$name];
+	if( $f['error'] !== UPLOAD_ERR_OK ) return NULL;
+	if( $f['type'] != 'image/png' ) return NULL;
+	if( filesize($f['tmp_name']) > (1024 * 32) ) return NULL;
+	
+	$info = getimagesize($f['tmp_name']);
+	if( ! $info ) return NULL;
+	if( $info[2] != IMAGETYPE_PNG ) return NULL;
+	if( $info[0] > 32 ) return NULL;
+	if( $info[1] != $info[0] ) return NULL;
+
+	$x = file_get_contents( $f['tmp_name'] );
+	unlink($f['tmp_name']);
+	return data_uri($x, 'image/png');
 }
 
 function narwhal( $bbs, $ice, $pak ) {
@@ -73,7 +108,7 @@ function narwhal( $bbs, $ice, $pak ) {
 
 	$entry_id = substr($ice, 0, 6);	
 	$topic_id = substr($ice, 6, 6);	
-
+	
 	($topic = $bbs->find_topic($topic_id)) || error('Cannot Find Topic');
 
 	$calced_entry_id = gimme_link($topic); 
@@ -111,6 +146,11 @@ function narwhal( $bbs, $ice, $pak ) {
 					$name = 'Anonymous!'.LINK_CODE.LINK_SECRET;
 				}
 				$post = compact('title','name','body');
+
+				// Only allow icon upload with title
+				if( !empty($title) ) {
+					$post['x'] = handle_upload('icon');	
+				}				
 				$post = $bbs->add_reply($topic_id, $post);
 			}
 		}

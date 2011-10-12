@@ -96,6 +96,15 @@ background-image: -webkit-gradient(
 	font-size: 14px;
 }
 
+.post_icon {
+	float: left;
+	margin-right: 5px;
+}
+
+.topic_icon {
+	float: right;
+}
+
 .post_subcount {
 	float: right;
 }
