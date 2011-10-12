@@ -34,12 +34,12 @@ function template_footer() {
 }
 
 function make_srl( $input ) {
-	return sprintf('<a href="/%s.html">%s</a>', $input[1], $input[0]);
+	return sprintf('<a href="/%s.html">(:%s:%s:)</a>', $input['i'], LINK_CODE, $input['i']);
 }
 
 function format_body( $content ) {
 	$content = preg_replace('/\n+/',"\n", $content);
-	$content = preg_replace_callback('/>>(?P<c>[a-z0-9]):(?P<i>[a-zA-Z0-9]{6})<<\b/', 'make_srl', $content);
+	$content = preg_replace_callback('/\(:(?P<i>[a-zA-Z0-9]{12}):\)/', 'make_srl', $content);
 	return $content;
 }
 
@@ -53,7 +53,7 @@ function template_topic_detail($topic, $replies) {
 
 			<h2><?php echo htmlentities($topic['title']); ?></h2>
 			<div class="topic_body">
-				<?php echo htmlentities($topic['body']) ?>
+				<?php echo nl2br(format_body(htmlentities($topic['body']))) ?>
 			</div>
 		</div>
 
