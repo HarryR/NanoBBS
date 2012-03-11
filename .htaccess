@@ -1,2 +1,2 @@
 RewriteEngine On
-RewriteRule ^([a-zA-Z0-9]{12})\.(html|json|bson|torrent)$ /index.php?ice=$1&pak=$2 [L,QSA]
+RewriteRule ^([a-zA-Z0-9]{12})\.(html|json|torrent)$ /index.php?ice=$1&pak=$2 [L,QSA]

@@ -14,8 +14,8 @@ function template_header() {
 	<head>
 		<title><?php echo SITE_TITLE; ?></title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<link rel="stylesheet" type="text/css" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css" />
 		<link rel="stylesheet" type="text/css" href="<?php echo CSS_URL; ?>" />
-		
 	</head>
 	
 	<body>
@@ -40,6 +40,7 @@ function make_srl( $input ) {
 function format_body( $content ) {
 	$content = preg_replace('/\n+/',"\n", $content);
 	$content = preg_replace_callback('/\(:(?P<i>[a-zA-Z0-9]{12}):\)/', 'make_srl', $content);
+	$content = wordwrap($content, 42, "\n", TRUE);
 	return $content;
 }
 
@@ -53,7 +54,7 @@ function template_topic_detail($topic, $replies) {
 
 			<h2><?php echo htmlentities($topic['title']); ?></h2>
 			<div class="topic_body">
-				<?php echo nl2br(format_body(htmlentities($topic['body']))) ?>
+				<?php echo nl2br(format_body(htmlentities($topic['body']))); ?>
 			</div>
 		</div>
 
@@ -67,13 +68,13 @@ function template_topic_detail($topic, $replies) {
 
 				<?php if( !empty($reply['title']) ): ?>
 				<div class="title"><?php echo htmlspecialchars($reply['title']); ?>
-					<?php if( intval($reply['c']) ): ?>
+					<?php if( isset($reply['c']) && intval($reply['c']) ): ?>
 						<span class="post_subcount">+<?php echo intval($reply['c']) ?></span>				
 					<?php endif; ?>
 				</div>	
 				<?php endif; ?>
 				<div class="post_info">					
-					<a href="/<?php echo gimme_link($reply) . $reply_id ?>.html">				
+					<a href="/<?php echo gimme_link($reply) . $reply['_id'] ?>.html">				
 						<span class="post_author"><?php echo htmlspecialchars($reply['name']); ?></span>						
 						<span class="post_id">#id:<?php echo $reply_id; ?></span>
 
@@ -81,7 +82,7 @@ function template_topic_detail($topic, $replies) {
 					</a>
 				</div><!-- .post_info -->
 			</div>
-			<div class="content">				
+			<div class="content">
 				<?php echo nl2br(format_body(htmlentities($reply['body']))); ?>
 			</div>
 		</div>
@@ -94,24 +95,46 @@ function template_topic_detail($topic, $replies) {
 
 function template_topic_reply_form($parent_id, $id, $can_add) {
 ?>	
-	<form id="reply_form" method="post" enctype="multipart/form-data">
+<div class="row"><div class="span8">
+	<form class="form-horizontal" method="post" enctype="multipart/form-data">
 	<?php if( $can_add ): ?>		
-		<label for="reply_title"><?php echo REPLY_TITLE_FIELD ?></label>
-		<input type="text" id="reply_title" name="title" maxlength="100" /><br /><br />
+	<fieldset>
+		<div class="control-group">
+			<label class="control-label" for="reply_title"><?php echo REPLY_TITLE_FIELD ?></label>
+			<div class="controls">
+				<input type="text" id="reply_title" class="span3"  name="title" maxlength="100" />
+			</div>
+		</div>
 
-		<label for="reply_name"><?php echo REPLY_NAME_FIELD ?></label>
-		<input type="text" id="reply_name" name="name" maxlength="100" /><br /><br />
+		<div class="control-group">
+			<label class="control-label" for="reply_name"><?php echo REPLY_NAME_FIELD ?></label>
+			<div class="controls">
+				<input type="text" id="reply_name" class="span3"  name="name" maxlength="100" />
+			</div>
+		</div>
 
-		<label for="reply_icon"><?php echo REPLY_ICON_FIELD ?></label>
-		<input type="file" id="reply_icon" name="icon" /><br />
-		<small>(max 32px square, max 32 KiB, PNG image)</small><br /><br />
+		<div class="control-group">
+			<label class="control-label" for="reply_icon"><?php echo REPLY_ICON_FIELD ?></label>
+			<div class="controls">
+				<input type="file" id="reply_icon" class="span3"  name="icon" />
+				<p class="help-block"><?php echo REPLY_RULES ?></p>
+			</div>
+		</div>
 		
-		<textarea id="reply" id="reply_body" name="body" rows="6" cols="40"></textarea><br />
-		<input type="submit" value="<?php echo REPLY_TITLE ?>" />
+		<div class="control-group">
+			<div class="controls">
+				<textarea id="reply" id="reply_body" class="span3"  name="body" rows="6" cols="40"></textarea><br />						
+			</div>
+		</div>
+		<div class="form-actions">
+			<input class="btn btn-inverse" type="submit" value="<?php echo REPLY_TITLE ?>" />
+		</div>
+	</fieldset>
 	<?php else: ?>
 		<h2>Topic Closed</h2>
 	<?php endif; ?>
 	</form>
+</div></div>
 <?php
 }
 

@@ -26,6 +26,8 @@ function filter_name( $name ) {
 	return $name;
 }
 
+include 'riak-php-client/riak.php';
+
 class bbs {
 	/** MongoCollection */
 	protected $posts;
@@ -34,9 +36,9 @@ class bbs {
 	protected $topics;
 
 	public function
-	__construct( $uri = 'mongodb://127.0.0.1' ) {
-		$m = new Mongo($uri);
-		$this->topics = $m->selectCollection('bbs', 'topics');
+	__construct( ) {
+		$this->_riak = new RiakClient();
+		$this->topics = $this->_riak->bucket('bbs.topics');
 	}
 
 	/** Find a single post */
@@ -44,7 +46,15 @@ class bbs {
 	find_topic( $topic_id ) {
 		if( ! $topic_id ) return NULL;
 		check_topic_id($topic_id);
-		return $this->topics->findOne( array('_id' => $topic_id) );
+		$val = apc_fetch($topic_id, $exists);
+		if( $exists ) {
+			return $val;
+		}
+		$val = $this->topics->get( $topic_id )->getData();
+		if( $val ) {
+			apc_store($topic_id,$val);
+		}
+		return $val;
 	}
 
 	/** Find all comments in a thread */
@@ -52,23 +62,43 @@ class bbs {
 	find_replies( $topic_id ) {
 		if( ! $topic_id ) return NULL;
 		check_topic_id($topic_id);
-		return $this->topics->find( array( 'p' => $topic_id ) )->sort(array('c' => -1));
+		$ret = apc_fetch($topic_id.'.replies', $exists);
+		if( ! $exists ) {
+			$topic = $this->topics->get($topic_id);
+			$ret = array();
+			foreach(  $topic->getLinks() AS $l ) {
+				$d = $l->get()->getData();
+				$ret[$d['_id']] = $d;
+			}
+			apc_store($topic_id.'.replies',$ret);
+		}
+		return $ret;
 	}
 
 	/** Adds a post to the topic */
 	public function
-	add_reply( $to_topic_id, $post ) {
-		$this->topics->update(
-			array('_id'  => $to_topic_id),
-			array('$inc' => array('c' => 1))
-		);
-		$post['_id'] = gimme_random();
-		$post['c'] = 0;
-		$post['p'] = $to_topic_id;
+	add_reply( $to_topic_id, $post ) {				
+		$id = gimme_random();
 		$post['name'] = filter_name($post['name']);
+		$post['_id'] = $id;
+		$post['p'] = $to_topic_id;
 		$post['w'] = time();
-		$this->topics->insert( $post );
-		return $post;
+
+		$o = $this->topics->newObject( $id );		
+		$o->setData($post);
+
+		$parent = $this->topics->get($to_topic_id);
+		if( $parent->exists() ) {
+			$o->addLink($parent);
+		}
+		$o->store(1);
+		apc_store($id, $post);
+
+		if( $to_topic_id && $parent->exists() ) {						
+			$parent->addLink( $o );
+			$parent->store();
+		}
+		return $o->getData();
 	}
 
 	public static function

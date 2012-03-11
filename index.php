@@ -10,7 +10,7 @@ date_default_timezone_set('UTC');
 
 define('LINK_CODE', 'p6n6');
 define('LINK_SECRET', 'derp');
-define('TOPIC_LIMIT', 25);
+define('TOPIC_LIMIT', 9);
 
 define('SITE_TITLE', 'Nar Nine Kay');
 define('TOPIC_TITLE', 'Topic');
@@ -22,9 +22,9 @@ define('REPLY_NAME_FIELD', 'Name');
 define('REPLY_TITLE_FIELD','Title');
 define('REPLY_ICON_FIELD','Icon');
 define('REPLY_CONTENT_FIELD', 'Body');
+define('REPLY_RULES', '(square JPEG image, max 32px, 32 KiB)');
 
 // URLs
-define('BASE_URL', 'http://localhost:8888/');
 define('CSS_URL', 'style.css');
 
 // Anti Spam
@@ -77,7 +77,7 @@ function censor($topic) {
 }
 
 function can_add_to( $topic ) {
-	return (intval($topic['c']) < TOPIC_LIMIT);
+	return TRUE;
 }
 
 function data_uri($contents, $mime) {
@@ -89,18 +89,37 @@ function handle_upload( $name ) {
 	if( ! isset($_FILES[$name]) ) return NULL;
 	$f = $_FILES[$name];
 	if( $f['error'] !== UPLOAD_ERR_OK ) return NULL;
-	if( $f['type'] != 'image/png' ) return NULL;
+	if( $f['type'] != 'image/jpeg' ) return NULL;
 	if( filesize($f['tmp_name']) > (1024 * 32) ) return NULL;
 	
 	$info = getimagesize($f['tmp_name']);
 	if( ! $info ) return NULL;
-	if( $info[2] != IMAGETYPE_PNG ) return NULL;
-	if( $info[0] > 32 ) return NULL;
+	if( $info[2] != IMAGETYPE_JPEG ) return NULL;
 	if( $info[1] != $info[0] ) return NULL;
+	if( $info[0] < 16 || $info[0] > 32 ) return NULL;
+
+	$readable_metadata = format_metadata($f['tmp_name']);	
 
 	$x = file_get_contents( $f['tmp_name'] );
 	unlink($f['tmp_name']);
-	return data_uri($x, 'image/png');
+	return array($readable_metadata,data_uri($x, $f['type']));
+}
+
+function format_metadata( $filename ) {
+	$exif = exif_read_data($filename, 0, true);
+	if( !$exif ) return NULL;
+	
+	$readable = '';
+	foreach ($exif as $key => $section) {
+	    foreach ($section as $name => $val) {
+	    	if( $key == 'FILE' && $name == 'FileName' ) continue;
+	    	if( strlen($val) > 500 ) continue;
+	    	$readable .= sprintf("%s.%s: %s\n", $key, $name, $val);
+	    }
+	    $readable .= "\n";
+	}
+
+	return $readable;
 }
 
 function narwhal( $bbs, $ice, $pak ) {
@@ -133,7 +152,7 @@ function narwhal( $bbs, $ice, $pak ) {
 	break;
 
 	case 'html':
-		if( can_add_to($topic['c'])
+		if( can_add_to($topic)
 		 && strlen( $title = trim(param('title'))) >= 0
 		 && strlen( $name = trim(param('name'))) >= 0
 		 && strlen( $body = trim(param('body')))
@@ -149,9 +168,15 @@ function narwhal( $bbs, $ice, $pak ) {
 
 				// Only allow icon upload with title
 				if( !empty($title) ) {
-					$post['x'] = handle_upload('icon');	
+					list($metadata, $icon) = handle_upload('icon');
+					$post['x'] = $icon;
+					if( !empty($metadata) ) {
+						$post['body'] .= "\n\n" . $metadata;
+					}
 				}				
 				$post = $bbs->add_reply($topic_id, $post);
+				header('Location: /' . gimme_link($post) . $post['_id'] . '.html');
+				exit();
 			}
 		}
 
