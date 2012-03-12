@@ -26,8 +26,6 @@ function filter_name( $name ) {
 	return $name;
 }
 
-include 'riak-php-client/riak.php';
-
 class bbs {
 	/** MongoCollection */
 	protected $posts;

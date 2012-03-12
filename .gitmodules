@@ -1,3 +1,0 @@
-[submodule "riak-php-client"]
-	path = riak-php-client
-	url = git://github.com/basho/riak-php-client.git

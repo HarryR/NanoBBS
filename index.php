@@ -1,6 +1,13 @@
 <?php	
+include 'model.php';
+include 'riak.php';
+include 'view.php';
+
 get_magic_quotes_gpc() && die('Disable magic_quotes_gpc in php.ini');
 date_default_timezone_set('UTC');
+
+header("HTTP/1.0 404 Not Found");
+ob_start("ob_gzhandler");
 
 ###############################################################################
 # Configuration
@@ -27,10 +34,6 @@ define('REPLY_RULES', '(square JPEG image, max 32px, 32 KiB)');
 // URLs
 define('CSS_URL', 'style.css');
 
-// Anti Spam
-define('TIME_BETWEEN_TOPICS', 120);
-define('TIME_BETWEEN_POSTS', 30);
-
 # End of Configuration
 ###############################################################################
 
@@ -41,9 +44,7 @@ function param($name, $default = NULL) {
 	return $_REQUEST[$name];
 }
 
-try {
-	require_once('model.php');
-	require_once('view.php');
+try {	
 	$bbs = bbs::instance();
 }
 catch( Excepiton $ex ) {
@@ -136,23 +137,16 @@ function narwhal( $bbs, $ice, $pak ) {
 	$replies = $bbs->find_replies($topic_id);
 
 	switch( $pak ) {
-	case 'bson':
-		header('Content-Type: application/bson');
-		echo bson_encode(array(
-			'topic' => censor($topic),
-			'replies' => iterator_to_array($replies),
-		));
-
 	case 'json':
 		header('Content-Type: application/json');
 		echo json_encode(array(
 			'topic' => censor($topic),
 			'replies' => iterator_to_array($replies),
-		));
+		));		
 	break;
 
 	case 'html':
-		if( can_add_to($topic)
+		if( count($replies) < TOPIC_LIMIT
 		 && strlen( $title = trim(param('title'))) >= 0
 		 && strlen( $name = trim(param('name'))) >= 0
 		 && strlen( $body = trim(param('body')))
@@ -175,8 +169,10 @@ function narwhal( $bbs, $ice, $pak ) {
 					}
 				}				
 				$post = $bbs->add_reply($topic_id, $post);
+				$replies[] = $post;
+				apc_delete($topic_id.'.replies');
 				header('Location: /' . gimme_link($post) . $post['_id'] . '.html');
-				exit();
+				exit;
 			}
 		}
 

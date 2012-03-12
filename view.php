@@ -14,7 +14,6 @@ function template_header() {
 	<head>
 		<title><?php echo SITE_TITLE; ?></title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-		<link rel="stylesheet" type="text/css" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css" />
 		<link rel="stylesheet" type="text/css" href="<?php echo CSS_URL; ?>" />
 	</head>
 	
@@ -34,13 +33,13 @@ function template_footer() {
 }
 
 function make_srl( $input ) {
-	return sprintf('<a href="/%s.html">(:%s:%s:)</a>', $input['i'], LINK_CODE, $input['i']);
+	return sprintf('<a href="/%s.html">(:%s:%s:)</a>', $input['i'], LINK_CODE, substr($input['i'], 0, 6));
 }
 
 function format_body( $content ) {
 	$content = preg_replace('/\n+/',"\n", $content);
 	$content = preg_replace_callback('/\(:(?P<i>[a-zA-Z0-9]{12}):\)/', 'make_srl', $content);
-	$content = wordwrap($content, 42, "\n", TRUE);
+	$content = wordwrap($content, 74, "\n", TRUE);
 	return $content;
 }
 
@@ -60,6 +59,7 @@ function template_topic_detail($topic, $replies) {
 
 		<?php $i = 0; ?>
 		<?php foreach( $replies AS $reply_id => $reply ): ?>
+			<?php if( $reply_id == $topic['p'] ) continue; ?>
 		<div class="post" id="post_<?php echo $topic['_id'].$reply_id; ?>">
 			<div class="post_header">
 				<?php if( !empty($reply['x']) ): ?>
@@ -127,7 +127,7 @@ function template_topic_reply_form($parent_id, $id, $can_add) {
 			</div>
 		</div>
 		<div class="form-actions">
-			<input class="btn btn-inverse" type="submit" value="<?php echo REPLY_TITLE ?>" />
+			<input class="btn primary" type="submit" value="<?php echo REPLY_TITLE ?>" />
 		</div>
 	</fieldset>
 	<?php else: ?>
