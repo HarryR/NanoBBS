@@ -1,7 +1,8 @@
 <?php
 /** This will give you 4 bytes of reasonably random URL-safe data */
-function gimme_random($length = 6, $seed = NULL) {
-	assert( $length >= 4 );
+function gimme_random($length = 0, $seed = NULL) {
+	if( ! $length ) $length = LINK_SIZE;
+	assert( $length >= LINK_SIZE );
 	$seed === NULL && $seed = microtime(TRUE) . uniqid() . mt_rand();
 	$random = hash_hmac('sha256', $seed, LINK_SECRET, TRUE);
 	$safe = str_replace(array('+','/','='), array('','',''), base64_encode($random));
@@ -11,8 +12,8 @@ function gimme_random($length = 6, $seed = NULL) {
 }
 
 function check_topic_id( $id ) {
-	assert( strlen($id) == 6 );
-	assert( preg_match( '/^[a-zA-Z0-9]{4}$/', $id ) !== FALSE );
+	assert( strlen($id) == LINK_SIZE );
+	assert( preg_match( '/^[a-zA-Z0-9]{'.LINK_SIZE.'}$/', $id ) !== FALSE );
 }
 
 // Implements tripcodes
@@ -27,10 +28,7 @@ function filter_name( $name ) {
 }
 
 class bbs {
-	/** MongoCollection */
-	protected $posts;
-
-	/** MongoCollection */
+	/** RiakBucket */
 	protected $topics;
 
 	public function

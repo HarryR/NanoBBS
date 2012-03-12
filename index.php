@@ -18,6 +18,7 @@ ob_start("ob_gzhandler");
 define('LINK_CODE', 'p6n6');
 define('LINK_SECRET', 'derp');
 define('TOPIC_LIMIT', 9);
+define('LINK_SIZE', 6);
 
 define('SITE_TITLE', 'Nar Nine Kay');
 define('TOPIC_TITLE', 'Topic');
@@ -68,7 +69,7 @@ if( param('ice') == NULL && param('bootstrap') == LINK_SECRET ) {
 narwhal($bbs,$ice,$pak);
 
 function gimme_link( $topic ) {
-	return gimme_random(6,$topic['p'].$topic['_id']);
+	return gimme_random(LINK_SIZE,$topic['p'].$topic['_id']);
 }
 
 function censor($topic) {
@@ -124,10 +125,10 @@ function format_metadata( $filename ) {
 }
 
 function narwhal( $bbs, $ice, $pak ) {
-	assert( strlen($ice) == 12 );
+	assert( strlen($ice) == LINK_SIZE * 2 );
 
-	$entry_id = substr($ice, 0, 6);	
-	$topic_id = substr($ice, 6, 6);	
+	$entry_id = substr($ice, 0, LINK_SIZE);	
+	$topic_id = substr($ice, LINK_SIZE, LINK_SIZE);	
 	
 	($topic = $bbs->find_topic($topic_id)) || error('Cannot Find Topic');
 

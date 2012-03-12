@@ -33,8 +33,9 @@ Checklist:
  * Riak Database
 
  * Webserver with PHP
- 
+
  * APC extension for PHP
+
 
 Benchmark
 ---------
